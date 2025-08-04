@@ -1,0 +1,75 @@
+name: Docker Publish
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore .env file from secrets
+        run: |
+          {
+            echo "API_TOKEN=${{ secrets.API_TOKEN }}"
+            echo "BOT_LOGIN=${{ secrets.BOT_LOGIN }}"
+            echo "BOT_PASSWORD=${{ secrets.BOT_PASSWORD }}"
+            echo "DB_USER=${{ secrets.DB_USER }}"
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+            echo "DB_HOST=${{ secrets.DB_HOST }}"
+            echo "DB_PORT=${{ secrets.DB_PORT }}"
+            echo "DB_NAME=${{ secrets.DB_NAME }}"
+            echo "DRIVE_LOGIN=${{ secrets.DRIVE_LOGIN }}"
+            echo "DRIVE_PASSW=${{ secrets.DRIVE_PASSW }}"
+            echo "TARGET_URL=${{ secrets.TARGET_URL }}"
+            echo "COOKIE1_YM_UID=${{ secrets.COOKIE1_YM_UID }}"
+            echo "COOKIE1_YM_D=${{ secrets.COOKIE1_YM_D }}"
+            echo "COOKIE1_LJ=${{ secrets.COOKIE1_LJ }}"
+            echo "COOKIE1_AGREEMENT=${{ secrets.COOKIE1_AGREEMENT }}"
+            echo "COOKIE1_SESSION=${{ secrets.COOKIE1_SESSION }}"
+            echo "COOKIE2_YM_UID=${{ secrets.COOKIE2_YM_UID }}"
+            echo "COOKIE2_YM_D=${{ secrets.COOKIE2_YM_D }}"
+            echo "COOKIE2_LJ=${{ secrets.COOKIE2_LJ }}"
+            echo "COOKIE2_AGREEMENT=${{ secrets.COOKIE2_AGREEMENT }}"
+            echo "COOKIE2_SESSION=${{ secrets.COOKIE2_SESSION }}"
+            echo "COOKIE_FINAL=${{ secrets.COOKIE_FINAL }}"
+            echo "SUPER_ADMIN_ID=${{ secrets.SUPER_ADMIN_ID }}"
+            echo "ADMIN_IDS=${{ secrets.ADMIN_IDS }}"
+          } > .env
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKER_USERNAME }}/telegram-worker
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+
+      - name: Restore anon.session from secret
+        run: |
+          echo "${{ secrets.ANON_SESSION_B64 }}" | base64 -d > anon.session
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

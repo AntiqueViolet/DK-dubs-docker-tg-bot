@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  dkbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dkbot
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - botnet
+
+networks:
+  botnet:
+    driver: bridge
