@@ -794,12 +794,14 @@ async def dwnldk_dk(nomer):
                     ORDER BY et.createdAt DESC;
                 """)
     for a in cur:
+        conn.close()
         if str(a) != 'None' and a is not None:
             print(a[0])
             logins.logging(a[0], a[1])
             return a[1]
         else:
             return 0
+    conn.close()
 
 
 async def dwnldk_vin(nomer):
@@ -830,12 +832,14 @@ async def dwnldk_vin(nomer):
                     ORDER BY et.createdAt DESC;
                 """)
     for a in cur:
+        conn.close()
         if str(a) != 'None' and a is not None:
             print(a[0])
             logins.logging(a[0], a[1])
             return a[1]
         else:
             return 0
+    conn.close()
 
 
 async def dwnldk_rn(nomer):
@@ -866,12 +870,14 @@ async def dwnldk_rn(nomer):
                     ORDER BY et.createdAt DESC;
                 """)
     for a in cur:
+        conn.close()
         if str(a) != 'None' and a is not None:
             print(a[0])
             logins.logging(a[0], a[1])
             return a[1]
         else:
             return 0
+    conn.close()
 
 
 async def dwnldk_kr(nomer):
@@ -903,12 +909,14 @@ async def dwnldk_kr(nomer):
                     ORDER BY et.createdAt DESC;
                 """)
     for a in cur:
+        conn.close()
         if str(a) != 'None' and a is not None:
             print(a[0])
             logins.logging(a[0], a[1])
             return a[1]
         else:
             return 0
+    conn.close()
 
 
 async def dwnldk_statistic(nomer):
@@ -945,10 +953,12 @@ async def dwnldk_statistic(nomer):
                     ORDER BY et.createdAt DESC;
                 """)
     for a in cur:
+        conn.close()
         if str(a) != 'None':
             return a[4]
         else:
             return 0
+    conn.close()
 
 
 @dp.callback_query(F.data == 'download_archive')
