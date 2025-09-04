@@ -998,6 +998,11 @@ async def process_date_start(message: Message, state: FSMContext):
     await message.answer("Введите дату окончания периода (ГГГГ-ММ-ДД):")
 
 
+def _chunked(iterable, size: int):
+    """Разбивает последовательность на куски фиксированного размера."""
+    for i in range(0, len(iterable), size):
+        yield iterable[i:i+size]
+
 @dp.message(DialogStates.waiting_for_date_end)
 async def process_date_end(message: Message, state: FSMContext):
     if not re.match(r'\d{4}-\d{2}-\d{2}', message.text):
@@ -1011,34 +1016,68 @@ async def process_date_end(message: Message, state: FSMContext):
 
     try:
         count_dk = await execute_count_query(org_name, date_start, date_end)
-
-        if count_dk > 10:
-            await message.answer(f"Слишком много дк в архиве {count_dk}. Выберите другой период")
-            await state.clear()
-            return
-
         if count_dk == 0:
-            await message.answer(f"Ничего не найдено")
+            await message.answer("Ничего не найдено")
             await state.clear()
             return
 
         ids_list = await execute_ids_query(org_name, date_start, date_end)
 
+        await message.answer(
+            f"Найдено ДК: {count_dk}. Начинаю скачивание партиями по 10 и сборку архива…"
+        )
+
         folder_name = f"archive_{int(time.time())}"
         os.makedirs(folder_name, exist_ok=True)
 
-        for dk_id in ids_list:
-            await dwnldk_dk(str(dk_id[0]))
-            if os.path.exists(f"{dk_id[0]}.pdf"):
-                shutil.move(f"{dk_id[0]}.pdf", f"{folder_name}/{dk_id[0]}.pdf")
+        skipped = []
+        downloaded = 0
+
+        for batch in _chunked(ids_list, 10):
+            tasks = [dwnldk_dk(str(dk_tuple[0])) for dk_tuple in batch]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for dk_tuple, res in zip(batch, results):
+                nomer = str(dk_tuple[0])
+                if isinstance(res, Exception):
+                    skipped.append(nomer)
+                    continue
+
+                pdf_name = f"{res}.pdf"
+                try:
+                    if os.path.exists(pdf_name):
+                        shutil.move(pdf_name, os.path.join(folder_name, f"{res}.pdf"))
+                        downloaded += 1
+                    else:
+                        skipped.append(nomer)
+                except Exception:
+                    skipped.append(nomer)
+
+            await asyncio.sleep(1)
+
+        if downloaded == 0:
+            shutil.rmtree(folder_name, ignore_errors=True)
+            await message.answer("Не удалось собрать архив: не найдено ни одного PDF по выбранным параметрам.")
+            await state.clear()
+            return
 
         shutil.make_archive(folder_name, 'zip', folder_name)
-
         document = FSInputFile(f"{folder_name}.zip")
         await bot.send_document(chat_id=message.from_user.id, document=document)
 
-        shutil.rmtree(folder_name)
-        os.remove(f"{folder_name}.zip")
+        msg = [f"Готово. В архив добавлено файлов: {downloaded}."]
+        if skipped:
+            sample = ", ".join(skipped[:20])
+            tail = "" if len(skipped) <= 20 else f" и ещё {len(skipped) - 20}…"
+            msg.append(f"Не удалось найти/скачать для номеров: {sample}{tail}")
+        await message.answer("\n".join(msg))
+
+        # 7) Уборка
+        shutil.rmtree(folder_name, ignore_errors=True)
+        try:
+            os.remove(f"{folder_name}.zip")
+        except OSError:
+            pass
 
     except Exception as e:
         await message.answer(f"Ошибка: {str(e)}")
