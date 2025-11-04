@@ -1,5 +1,5 @@
 import logging
-import mariadb
+import pymysql
 import sys
 import logins
 from aiogram import F
@@ -768,8 +768,8 @@ async def stat_check(message: types.Message):
 
 async def dwnldk_dk(nomer):
     try:
-        conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
-    except mariadb.Error as e:
+        conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
+    except pymysql.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
 
@@ -806,8 +806,8 @@ async def dwnldk_dk(nomer):
 
 async def dwnldk_vin(nomer):
     try:
-        conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
-    except mariadb.Error as e:
+        conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
+    except pymysql.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
 
@@ -844,8 +844,8 @@ async def dwnldk_vin(nomer):
 
 async def dwnldk_rn(nomer):
     try:
-        conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
-    except mariadb.Error as e:
+        conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
+    except pymysql.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
 
@@ -882,8 +882,8 @@ async def dwnldk_rn(nomer):
 
 async def dwnldk_kr(nomer):
     try:
-        conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
-    except mariadb.Error as e:
+        conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
+    except pymysql.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
 
@@ -921,8 +921,8 @@ async def dwnldk_kr(nomer):
 
 async def dwnldk_statistic(nomer):
     try:
-        conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
-    except mariadb.Error as e:
+        conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
+    except pymysql.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
 
@@ -1086,7 +1086,7 @@ async def process_date_end(message: Message, state: FSMContext):
 
 
 async def execute_count_query(org_name, date_start, date_end):
-    conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
+    conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
     cur = conn.cursor()
     cur.execute(f"""
         SELECT COUNT(et.id) 
@@ -1103,7 +1103,7 @@ async def execute_count_query(org_name, date_start, date_end):
 
 
 async def execute_ids_query(org_name, date_start, date_end):
-    conn = mariadb.connect(**config.DB_CONFIG_MARIADB)
+    conn = pymysql.connect(**config.DB_CONFIG_MARIADB)
     cur = conn.cursor()
     cur.execute(f"""
         SELECT et.nomer 
